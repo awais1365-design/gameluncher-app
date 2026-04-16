@@ -1,5 +1,7 @@
 {
   "name": "launcher-portal",
+  "homepage": "https://awais1365-design.github.io/gamelauncher-app"
+,
   "private": true,
   "version": "0.0.0",
   "type": "module",
