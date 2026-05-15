@@ -5,6 +5,7 @@ import LibraryView from './components/LibraryView';
 import StoreView from './components/StoreView';
 import DownloadsView from './components/DownloadsView';
 import SettingsView from './components/SettingsView';
+import UpdateNotification from './components/UpdateNotification';
 
 function AppContent() {
   const { view } = useLauncher();
@@ -21,6 +22,7 @@ function AppContent() {
           {view === 'settings'  && <SettingsView />}
         </main>
       </div>
+      <UpdateNotification />
     </div>
   );
 }

@@ -1,7 +1,17 @@
 import { createContext, useContext, useEffect, useReducer, useRef } from 'react';
-import type { Game, InstalledGame, DownloadState, Settings, View } from '../types';
+import type {
+  Game, InstalledGame, DownloadState, Settings, View,
+  GameUpdatesSnapshot,
+} from '../types';
 
 /* ─── State ──────────────────────────────────────────── */
+
+const INITIAL_GAME_UPDATES: GameUpdatesSnapshot = {
+  games:       {},
+  lastChecked: null,
+  isChecking:  false,
+  isOnline:    true,
+};
 
 type State = {
   games: Game[];
@@ -11,30 +21,33 @@ type State = {
   view: View;
   gamesLoading: boolean;
   gamesError: string | null;
+  gameUpdates: GameUpdatesSnapshot;
 };
 
 type Action =
-  | { type: 'SET_GAMES'; payload: Game[] }
+  | { type: 'SET_GAMES';        payload: Game[] }
   | { type: 'SET_GAMES_LOADING'; payload: boolean }
-  | { type: 'SET_GAMES_ERROR'; payload: string | null }
-  | { type: 'SET_INSTALLED'; payload: Record<string, InstalledGame> }
-  | { type: 'SET_VIEW'; payload: View }
-  | { type: 'SET_SETTINGS'; payload: Settings }
+  | { type: 'SET_GAMES_ERROR';  payload: string | null }
+  | { type: 'SET_INSTALLED';    payload: Record<string, InstalledGame> }
+  | { type: 'SET_VIEW';         payload: View }
+  | { type: 'SET_SETTINGS';     payload: Settings }
+  | { type: 'SET_GAME_UPDATES'; payload: GameUpdatesSnapshot }
   | { type: 'DOWNLOAD_PROGRESS'; payload: { gameId: string; percent: number; received: number; total: number } }
-  | { type: 'INSTALL_STATUS'; payload: { gameId: string; status: string } }
-  | { type: 'START_DOWNLOAD'; payload: { gameId: string; gameName: string; version: string } }
-  | { type: 'DOWNLOAD_DONE'; payload: { gameId: string; installed: InstalledGame } }
-  | { type: 'DOWNLOAD_ERROR'; payload: { gameId: string; error: string } }
-  | { type: 'REMOVE_DOWNLOAD'; payload: string };
+  | { type: 'INSTALL_STATUS';    payload: { gameId: string; status: string } }
+  | { type: 'START_DOWNLOAD';    payload: { gameId: string; gameName: string; version: string } }
+  | { type: 'DOWNLOAD_DONE';     payload: { gameId: string; installed: InstalledGame } }
+  | { type: 'DOWNLOAD_ERROR';    payload: { gameId: string; error: string } }
+  | { type: 'REMOVE_DOWNLOAD';   payload: string };
 
 const initial: State = {
-  games: [],
-  installed: {},
-  downloads: {},
-  settings: { installDir: '' },
-  view: 'library',
+  games:        [],
+  installed:    {},
+  downloads:    {},
+  settings:     { installDir: '' },
+  view:         'library',
   gamesLoading: true,
-  gamesError: null,
+  gamesError:   null,
+  gameUpdates:  INITIAL_GAME_UPDATES,
 };
 
 function reducer(state: State, action: Action): State {
@@ -51,6 +64,9 @@ function reducer(state: State, action: Action): State {
       return { ...state, view: action.payload };
     case 'SET_SETTINGS':
       return { ...state, settings: action.payload };
+    case 'SET_GAME_UPDATES':
+      return { ...state, gameUpdates: action.payload };
+
     case 'START_DOWNLOAD': {
       const { gameId, gameName, version } = action.payload;
       return {
@@ -117,13 +133,14 @@ function reducer(state: State, action: Action): State {
 /* ─── Context ────────────────────────────────────────── */
 
 type CtxValue = State & {
-  setView: (v: View) => void;
-  refreshGames: () => void;
-  installGame: (game: Game) => void;
-  uninstallGame: (gameId: string) => void;
-  launchGame: (gameId: string) => void;
-  updateSettings: (s: Partial<Settings>) => void;
-  clearDownload: (gameId: string) => void;
+  setView:          (v: View) => void;
+  refreshGames:     () => void;
+  installGame:      (game: Game) => void;
+  uninstallGame:    (gameId: string) => void;
+  launchGame:       (gameId: string) => void;
+  updateSettings:   (s: Partial<Settings>) => void;
+  clearDownload:    (gameId: string) => void;
+  checkGameUpdates: () => void;
 };
 
 const Ctx = createContext<CtxValue>(null!);
@@ -138,6 +155,7 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
     loadInstalled();
     loadSettings();
 
+    // ── Game download events ──────────────────────────────────────────────
     const unsubProgress = window.launcher.onDownloadProgress((data) => {
       dispatch({ type: 'DOWNLOAD_PROGRESS', payload: data });
     });
@@ -145,9 +163,20 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'INSTALL_STATUS', payload: data });
     });
 
+    // ── Game update detection ─────────────────────────────────────────────
+    window.launcher.gameUpdates
+      .getSnapshot()
+      .then((s) => dispatch({ type: 'SET_GAME_UPDATES', payload: s }))
+      .catch(() => {});
+
+    const unsubGameUpdates = window.launcher.gameUpdates.onSnapshotChanged((s) => {
+      dispatch({ type: 'SET_GAME_UPDATES', payload: s });
+    });
+
     return () => {
       unsubProgress();
       unsubStatus();
+      unsubGameUpdates();
     };
   }, []);
 
@@ -170,6 +199,10 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
+  function checkGameUpdates() {
+    window.launcher.gameUpdates.checkAll().catch(() => {});
+  }
+
   async function installGame(game: Game) {
     if (activeDownloads.current.has(game._id)) return;
 
@@ -185,13 +218,13 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const installed = await window.launcher.installGame({
-        gameId: game._id,
-        gameName: game.name,
+        gameId:     game._id,
+        gameName:   game.name,
         versionUrl: latestVersion.url,
-        version: latestVersion.version,
+        version:    latestVersion.version,
       });
       dispatch({ type: 'DOWNLOAD_DONE', payload: { gameId: game._id, installed } });
-    } catch (e: any) {
+    } catch (e: unknown) {
       dispatch({ type: 'DOWNLOAD_ERROR', payload: { gameId: game._id, error: String(e) } });
     } finally {
       activeDownloads.current.delete(game._id);
@@ -221,13 +254,14 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
   return (
     <Ctx.Provider value={{
       ...state,
-      setView: (v) => dispatch({ type: 'SET_VIEW', payload: v }),
+      setView:          (v) => dispatch({ type: 'SET_VIEW', payload: v }),
       refreshGames,
       installGame,
       uninstallGame,
       launchGame,
       updateSettings,
       clearDownload,
+      checkGameUpdates,
     }}>
       {children}
     </Ctx.Provider>

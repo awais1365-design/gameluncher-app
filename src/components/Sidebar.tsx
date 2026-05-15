@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLauncher } from '../store/LauncherContext';
+import { useUpdater } from '../hooks/useUpdater';
 import type { View } from '../types';
 
 const NAV: { id: View; label: string; icon: React.ReactElement }[] = [
@@ -46,11 +47,56 @@ const NAV: { id: View; label: string; icon: React.ReactElement }[] = [
 ];
 
 export default function Sidebar() {
-  const { view, setView, downloads, installed } = useLauncher();
+  const { view, setView, downloads, installed, gameUpdates } = useLauncher();
+  const { state: launcherUpdate } = useUpdater();
+
   const activeDownloads = Object.values(downloads).filter(
     (d) => d.status === 'downloading' || d.status === 'installing'
   ).length;
+
   const installedCount = Object.keys(installed).length;
+
+  // Games with a pending update that aren't currently being downloaded
+  const gameUpdateCount = Object.values(gameUpdates.games).filter(
+    (g) => g.status === 'available' && !downloads[g.gameId]
+  ).length;
+
+  // Launcher update badge on Settings nav item
+  const launcherUpdateReady =
+    launcherUpdate.status === 'available' ||
+    launcherUpdate.status === 'downloaded';
+
+  function getBadge(id: View): React.ReactNode {
+    switch (id) {
+      case 'library':
+        if (gameUpdateCount > 0) {
+          return (
+            <span className="sidebar-count sidebar-count--update" title={`${gameUpdateCount} game update${gameUpdateCount !== 1 ? 's' : ''} available`}>
+              {gameUpdateCount}
+            </span>
+          );
+        }
+        if (installedCount > 0) {
+          return <span className="sidebar-count">{installedCount}</span>;
+        }
+        return null;
+
+      case 'downloads':
+        if (activeDownloads > 0) {
+          return <span className="sidebar-count sidebar-count--active">{activeDownloads}</span>;
+        }
+        return null;
+
+      case 'settings':
+        if (launcherUpdateReady) {
+          return <span className="sidebar-count sidebar-count--launcher-update" title="Launcher update available" />;
+        }
+        return null;
+
+      default:
+        return null;
+    }
+  }
 
   return (
     <aside className="sidebar">
@@ -63,18 +109,14 @@ export default function Sidebar() {
           >
             <span className="sidebar-icon">{item.icon}</span>
             <span className="sidebar-label">{item.label}</span>
-            {item.id === 'library' && installedCount > 0 && (
-              <span className="sidebar-count">{installedCount}</span>
-            )}
-            {item.id === 'downloads' && activeDownloads > 0 && (
-              <span className="sidebar-count sidebar-count--active">{activeDownloads}</span>
-            )}
+            {getBadge(item.id)}
           </button>
         ))}
       </nav>
+
       <div className="sidebar-footer">
-        <div className="sidebar-status-dot" />
-        <span>Online</span>
+        <div className={`sidebar-status-dot ${gameUpdates.isOnline ? '' : 'sidebar-status-dot--offline'}`} />
+        <span>{gameUpdates.isOnline ? 'Online' : 'Offline'}</span>
       </div>
     </aside>
   );

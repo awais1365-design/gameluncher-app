@@ -699,3 +699,298 @@ html, body, #root {
 .dir-input:focus { border-color: var(--accent); color: var(--text-primary); }
 
 .settings-actions { padding-top: 4px; }
+
+/* ─── Update Bottom Bar (launcher self-update) ───────── */
+.update-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+  height: 36px;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--text-primary);
+  overflow: hidden;
+  animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* Color accents per state */
+.update-bar--available   { border-top-color: rgba(26, 159, 255, 0.4); }
+.update-bar--downloading { border-top-color: rgba(26, 159, 255, 0.4); }
+.update-bar--downloaded  { border-top-color: rgba(91, 163, 43, 0.5); }
+.update-bar--error       { border-top-color: rgba(204, 68, 68, 0.4); }
+
+.update-bar__spinner {
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--border-light);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.update-bar__icon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.update-bar__icon--success { color: var(--success-light); }
+.update-bar__icon--error   { color: var(--danger-light); }
+
+.update-bar__text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.update-bar__text--error { color: var(--danger-light); }
+
+.update-bar__progress-wrap {
+  width: 140px;
+  flex-shrink: 0;
+}
+
+.update-bar__progress-track {
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.update-bar__progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.update-bar__actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.update-bar__btn {
+  padding: 3px 12px;
+  border-radius: var(--radius);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background 0.12s, opacity 0.12s;
+  white-space: nowrap;
+}
+.update-bar__btn--primary {
+  background: var(--accent);
+  color: #fff;
+}
+.update-bar__btn--primary:hover { background: var(--accent-light); }
+.update-bar__btn--ghost {
+  background: rgba(255,255,255,0.07);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+}
+.update-bar__btn--ghost:hover { background: rgba(255,255,255,0.12); color: var(--text-primary); }
+
+/* ─── Sidebar update badges ──────────────────────────── */
+.sidebar-count--update {
+  background: var(--warning);
+  color: #1a1a1a;
+}
+
+/* Dot badge for launcher update on Settings item */
+.sidebar-count--launcher-update {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  padding: 0;
+  box-shadow: 0 0 6px rgba(26, 159, 255, 0.6);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+/* Offline status dot */
+.sidebar-status-dot--offline {
+  background: var(--text-muted) !important;
+  box-shadow: none !important;
+}
+
+/* ─── Settings — Update rows ─────────────────────────── */
+.settings-row--update {
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.settings-row-control--update {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Status chip */
+.update-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.update-status--ok {
+  background: rgba(91, 163, 43, 0.15);
+  color: var(--success-light);
+}
+.update-status--warning {
+  background: rgba(245, 166, 35, 0.15);
+  color: var(--warning);
+}
+.update-status--ready {
+  background: rgba(26, 159, 255, 0.15);
+  color: var(--accent-light);
+}
+.update-status--checking {
+  background: rgba(100, 148, 176, 0.12);
+  color: var(--text-secondary);
+}
+.update-status--error {
+  background: rgba(204, 68, 68, 0.12);
+  color: var(--danger-light);
+}
+
+.update-spinner {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  opacity: 0.7;
+}
+.update-spinner--sm {
+  width: 10px;
+  height: 10px;
+  border-width: 1.5px;
+}
+
+/* Version tags inside settings desc */
+.version-tag {
+  font-family: monospace;
+  font-size: 11px;
+  background: rgba(255,255,255,0.06);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--text-primary);
+}
+.version-tag--new {
+  background: rgba(26, 159, 255, 0.15);
+  color: var(--accent-light);
+}
+
+/* Inline download progress in Settings */
+.inline-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.inline-progress__track {
+  width: 100px;
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.inline-progress__fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* Last-checked meta text */
+.last-checked { color: var(--text-secondary); }
+.offline-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(204, 68, 68, 0.2);
+  color: var(--danger-light);
+  padding: 1px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* ─── Settings — Game update list ────────────────────── */
+.game-update-list {
+  border-top: 1px solid var(--border);
+}
+
+.game-update-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+.game-update-row:last-child { border-bottom: none; }
+.game-update-row:hover { background: rgba(255,255,255,0.03); }
+
+.game-update-row__cover {
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 14px;
+  color: rgba(255,255,255,0.3);
+  flex-shrink: 0;
+}
+
+.game-update-row__info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.game-update-row__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.game-update-row__versions {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+.game-update-row__action { flex-shrink: 0; }

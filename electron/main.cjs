@@ -3,10 +3,16 @@ const { exec } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-let win;
-let store;
+// Both compiled from electron/updater/*.ts via `npm run electron:compile`
+const { UpdaterService }     = require('./dist/updater/UpdaterService');
+const { GameUpdateService }  = require('./dist/updater/GameUpdateService');
 
 const BACKEND_URL = 'http://localhost:3000';
+
+let win;
+let store;
+let launcherUpdater;   // UpdaterService    — self-update via GitHub Releases
+let gameUpdater;       // GameUpdateService — game version checks against backend
 
 async function loadStore() {
   const { default: Store } = await import('electron-store');
@@ -42,9 +48,23 @@ function createWindow() {
 app.whenReady().then(async () => {
   await loadStore();
   createWindow();
+
+  // ── Launcher self-update (electron-updater + GitHub Releases) ────────────
+  launcherUpdater = new UpdaterService();
+  launcherUpdater.setMainWindow(win);
+  launcherUpdater.startAutoCheck();
+
+  // ── Game update detection (polls NestJS backend) ─────────────────────────
+  gameUpdater = new GameUpdateService(store, BACKEND_URL);
+  gameUpdater.setMainWindow(win);
+  gameUpdater.startAutoCheck();
 });
 
-app.on('window-all-closed', () => app.quit());
+app.on('window-all-closed', () => {
+  launcherUpdater?.stopAutoCheck();
+  gameUpdater?.stopAutoCheck();
+  app.quit();
+});
 
 /* ─── Window Controls ─────────────────────────────────── */
 
@@ -180,6 +200,10 @@ ipcMain.handle('install-game', async (event, { gameId, gameName, versionUrl, ver
   };
 
   store?.set('installedGames', installed);
+
+  // Immediately clear the update badge for this game — no need to wait for next check
+  gameUpdater?.handleGameInstalled(gameId);
+
   return installed[gameId];
 });
 

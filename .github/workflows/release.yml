@@ -1,0 +1,87 @@
+name: Release
+
+# Fires whenever a version tag is pushed: git tag v1.2.3 && git push --tags
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+# Prevent two release runs from racing each other
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ── Build matrix: macOS + Windows ──────────────────────────────────────────
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14          # Apple Silicon runner (also builds x64 via cross)
+            platform: mac
+          - os: windows-latest
+            platform: win
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      # ── Checkout ────────────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Node setup ──────────────────────────────────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # ── Install dependencies ─────────────────────────────────────────────────
+      - name: Install dependencies
+        run: npm ci
+
+      # ── Compile TypeScript updater source ────────────────────────────────────
+      - name: Compile Electron updater
+        run: npm run electron:compile
+
+      # ── Build Vite renderer ──────────────────────────────────────────────────
+      - name: Build renderer
+        run: npm run build
+
+      # ── macOS: build + publish DMG + ZIP ────────────────────────────────────
+      - name: Build & publish (macOS)
+        if: matrix.platform == 'mac'
+        run: npx electron-builder --mac --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          # Code-signing: set these secrets when you have an Apple Developer cert
+          # CSC_LINK:          ${{ secrets.MAC_CERT_P12_BASE64 }}
+          # CSC_KEY_PASSWORD:  ${{ secrets.MAC_CERT_PASSWORD }}
+          # APPLE_ID:          ${{ secrets.APPLE_ID }}
+          # APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          # APPLE_TEAM_ID:     ${{ secrets.APPLE_TEAM_ID }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false   # remove once signing is configured
+
+      # ── Windows: build + publish NSIS installer ───────────────────────────
+      - name: Build & publish (Windows)
+        if: matrix.platform == 'win'
+        run: npx electron-builder --win --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          # Code-signing: set these secrets when you have a Windows code-signing cert
+          # WIN_CSC_LINK:         ${{ secrets.WIN_CERT_P12_BASE64 }}
+          # WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CERT_PASSWORD }}
+
+  # ── Mark the draft release as published once all builds succeed ────────────
+  publish-release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
