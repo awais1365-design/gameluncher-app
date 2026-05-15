@@ -7,7 +7,7 @@ async function bootstrap() {
 
   // ✅ Allow frontend to connect
   app.enableCors({
-    origin: 'http://localhost:5173', // React Vite
+    origin: ['http://localhost:5173', 'http://localhost:5174'], // Electron UI and Launcher Portal
     methods: 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
     credentials: true,
   });
