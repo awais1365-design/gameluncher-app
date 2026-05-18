@@ -117,6 +117,9 @@ export default function Sidebar() {
       <div className="sidebar-footer">
         <div className={`sidebar-status-dot ${gameUpdates.isOnline ? '' : 'sidebar-status-dot--offline'}`} />
         <span>{gameUpdates.isOnline ? 'Online' : 'Offline'}</span>
+        {launcherUpdate.currentVersion && (
+          <span className="sidebar-version">v{launcherUpdate.currentVersion}</span>
+        )}
       </div>
     </aside>
   );
