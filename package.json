@@ -1,7 +1,7 @@
 {
   "name": "gameluncher-app",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -16,30 +16,30 @@
     "electron:publish": "npm run electron:build && electron-builder --publish always",
     "electron:test-update": "npm run electron:compile && SIMULATE_UPDATE=1 electron ."
   },
-  "dependencies": {
-    "@nestjs/mongoose": "^11.0.4",
-    "adm-zip": "^0.5.17",
-    "class-transformer": "^0.5.1",
-    "class-validator": "^0.15.1",
-    "concurrently": "^9.2.1",
-    "electron": "^41.1.1",
-    "electron-store": "^8.2.0",
-    "electron-updater": "6.8.3",
-    "mongoose": "^9.4.1",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "wait-on": "^9.0.4",
-    "zod": "^4.3.6"
-  },
-  "devDependencies": {
-    "@types/node": "^24.12.2",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "electron-builder": "^26.8.1",
-    "typescript": "~6.0.2",
-    "vite": "^8.0.4"
-  },
+ "dependencies": {
+  "@nestjs/mongoose": "^11.0.4",
+  "adm-zip": "^0.5.17",
+  "class-transformer": "^0.5.1",
+  "class-validator": "^0.15.1",
+  "concurrently": "^9.2.1",
+  "electron-store": "^8.2.0",
+  "electron-updater": "6.8.3",
+  "mongoose": "^9.4.1",
+  "react": "^19.2.4",
+  "react-dom": "^19.2.4",
+  "wait-on": "^9.0.4",
+  "zod": "^4.3.6"
+},
+ "devDependencies": {
+  "electron": "^41.1.1",
+  "electron-builder": "^26.8.1",
+  "@types/node": "^24.12.2",
+  "@types/react": "^19.2.14",
+  "@types/react-dom": "^19.2.3",
+  "@vitejs/plugin-react": "^6.0.1",
+  "typescript": "~6.0.2",
+  "vite": "^8.0.4"
+},
   "build": {
     "appId": "com.gameluncher.app",
     "productName": "GameLauncher",
@@ -60,11 +60,10 @@
     ],
     "extraResources": [],
     "publish": {
-      "provider": "github",
-      "owner": "awais1365-design",
-      "repo": "gamelauncher-app",
-      "releaseType": "release"
-    },
+  "provider": "github",
+  "owner": "awais1365-design",
+  "repo": "gamelauncher-app"
+},
     "mac": {
       "category": "public.app-category.games",
       "hardenedRuntime": true,
@@ -92,17 +91,14 @@
       "sign": false,
       "writeUpdateInfo": true
     },
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "publisherName": "GameLauncher"
-    },
+   "win": {
+  "target": [
+    {
+      "target": "nsis",
+      "arch": ["x64"]
+    }
+  ]
+},
     "nsis": {
       "oneClick": false,
       "allowElevation": true,
